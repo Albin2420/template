@@ -43,14 +43,17 @@ class TwilioService {
     while (next < 100000) {
       next *= 10;
     }
-    print(next.toInt());
+
     return next.toInt();
   }
 
-  Future<String> addVerifiedPhoneNumber(
-      {required String phoneNumber, required String userName}) async {
+  Future<String> addVerifiedPhoneNumber({
+    required String phoneNumber,
+    required String userName,
+  }) async {
     final url = Uri.parse(
-        'https://api.twilio.com/2010-04-01/Accounts/$accountSid/OutgoingCallerIds.json');
+      'https://api.twilio.com/2010-04-01/Accounts/$accountSid/OutgoingCallerIds.json',
+    );
 
     log('add url => $url');
 
@@ -85,7 +88,8 @@ class TwilioService {
     required String authToken,
   }) async {
     final url = Uri.parse(
-        'https://api.twilio.com/2010-04-01/Accounts/$accountSid/OutgoingCallerIds/$phoneNumberSid.json');
+      'https://api.twilio.com/2010-04-01/Accounts/$accountSid/OutgoingCallerIds/$phoneNumberSid.json',
+    );
     final response = await http.delete(
       url,
       headers: {
