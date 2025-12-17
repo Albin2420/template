@@ -7,8 +7,8 @@ class StorageService {
   static const _refreshTokenKey = 'refresh_token';
 
   static Future<void> saveTokens({
-    required String accessToken,
-    required String refreshToken,
+    String? accessToken,
+    String? refreshToken,
   }) async {
     await _storage.write(key: _accessTokenKey, value: accessToken);
     await _storage.write(key: _refreshTokenKey, value: refreshToken);

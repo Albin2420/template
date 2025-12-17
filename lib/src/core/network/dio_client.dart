@@ -1,4 +1,6 @@
 import 'dart:developer';
+import 'package:app/src/core/url.dart';
+import 'package:app/src/data/services/token/token_services.dart';
 import 'package:dio/dio.dart';
 
 class DioClient {
@@ -6,15 +8,14 @@ class DioClient {
       Dio()
         ..interceptors.add(
           InterceptorsWrapper(
-            onRequest: (options, handler) {
-              // final ctrl = Get.find<AppStartupController>();
-              // final token = ctrl.accessToken.value;
+            onRequest: (options, handler) async {
+              final token = await StorageService.getAccessToken();
 
-              // if (token.isNotEmpty) {
-              //   options.headers['Authorization'] = 'Bearer $token';
-              // }
-              // options.headers['Content-Type'] = 'application/json';
-              // log("🌍 API -> ${options.method} URL: ${options.uri}");
+              if (token == null) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+              options.headers['Content-Type'] = 'application/json';
+              log("🌍 API -> ${options.method} URL: ${options.uri}");
 
               return handler.next(options);
             },
@@ -28,15 +29,12 @@ class DioClient {
                 final refreshed = await _handleTokenRefresh();
 
                 if (refreshed) {
-                  // 🔁 Retry last failed request
                   final RequestOptions requestOptions = error.requestOptions;
                   final response = await dio.fetch(requestOptions);
 
                   return handler.resolve(response);
                 } else {
                   log("🚪 Refresh failed → Logout user");
-                  // final ctrl = Get.find<AppStartupController>();
-                  // ctrl.logout();
 
                   return handler.next(error);
                 }
@@ -52,37 +50,34 @@ class DioClient {
           ),
         );
 
-  /// 🔄 Token Refresh Logic
   static Future<bool> _handleTokenRefresh() async {
     try {
-      // final ctrl = Get.find<AppStartupController>();
-      // final refreshToken = ctrl.refreshToken.value;
+      final refreshToken = await StorageService.getRefreshToken();
 
-      // if (refreshToken.isEmpty) {
-      //   log("⚠ No refresh token available");
-      //   return false;
-      // }
+      if (refreshToken == null) {
+        log("⚠ No refresh token available");
+        return false;
+      }
 
-      // log("🔄 Calling Refresh Token API...");
+      log("🔄 Calling Refresh Token API...");
 
-      // final response = await dio.post(
-      //   "${Url.baseUrl}/${Url.refreshToken}",
-      //   data: {"refresh": refreshToken},
-      // );
+      final response = await dio.post(
+        "${Url.baseUrl}/${Url.refresh}",
+        data: {"refresh": refreshToken},
+      );
 
-      // if (response.statusCode == 200) {
-      //   final newAccess = response.data["access"] ?? "";
+      if (response.statusCode == 200) {
+        final newAccess = response.data["access"] ?? "";
 
-      //   if (newAccess.isNotEmpty) {
-      //     ctrl.accessToken.value = newAccess;
-      //     await ctrl.saveTokens(accessTk: newAccess);
-      //     log("✔ Token Refresh Success");
-      //     return true;
-      //   }
-      // } else {
-      //   log("❌ Refresh API failed");
-      //   return false;
-      // }
+        if (newAccess.isNotEmpty) {
+          await StorageService.saveTokens(accessToken: newAccess);
+          log("✔ Token Refresh Success");
+          return true;
+        }
+      } else {
+        log("❌ Refresh API failed");
+        return false;
+      }
       return false;
     } catch (e) {
       log("💥 Refresh Token Exception: $e");
